@@ -1,0 +1,7 @@
+*.png
+*.pyc
+*.p
+/__pycache__/*
+/misc/*
+/remote/*
+
