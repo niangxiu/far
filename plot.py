@@ -124,7 +124,7 @@ def change_W_std():
 def change_prm():
     # grad for different prm
     n_repeat = 1 # must use 1, since prm in ds.py is fixed at the time the pool generates
-    prms = np.linspace(-0.3, 0.4, 15)
+    prms = np.linspace(-0.3, 0.3, 11)
     A = 0.015 # step size in the plot
     phiavgs, sc, uc = np.empty([3,prms.shape[0]])
     try:
@@ -148,7 +148,7 @@ def change_prm():
 def all_info():
     # generate all info
     starttime = time.time()
-    phiavg, sc, uc, u, v, Juv, vt = far(5, W)
+    phiavg, sc, uc, u, v, Juv, vt, LE = far(5, W)
     endtime = time.time()
     print('time for far:', endtime-starttime)
     for i, j in [[1,0], [1,2]]:
@@ -160,7 +160,7 @@ def all_info():
         plt.savefig('x{}_x{}.png'.format(i+1, j+1))
         plt.close()
     print('phiavg, sc, uc, grad = ', '{:.3e}, {:.3e}, {:.3e}, {:.3e}'.format(phiavg, sc, uc, sc-uc))
-    # print('Lyapunov exponenets = ', LEs)
+    print('Lyapunov exponenets = ', LE)
     _, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(13,12))
     vn = v[:,:,0].reshape(-1)
     ax1.plot(np.arange(vn.shape[0]),vn)

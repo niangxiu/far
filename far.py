@@ -29,7 +29,7 @@ def far():
     for k in range(nseg):
         fwd.tan(x[k], e[k])
         e[k+1,0], R[k+1] = fwd.renorm(e[k,-1])
-    # LE = fwd.getLE(R)
+    LE = fwd.getLE(R)
 
     # adjoint
     eps[nseg,0] = e[nseg,0] 
@@ -54,9 +54,9 @@ def far():
 
     # finally, get X related quantities and compute the adjoint response
     fga, fgax = fwd.fgafgax_(x)
-    sc = (nu[:,1:] * fga[:,:-1]).sum(-1).mean() # shadowing contribution
+    sc = (nu[:,1:] * fga[:,:-1]).sum(-1)[1:-1].mean() # shadowing contribution
     div1 = (nut[:,1:] * fga[:,:-1]).sum(-1) # unstable divergence part 1
     div2 = (eps[:,1:].transpose(0,1,3,2) @ fgax[:,:-1] @ e[:,:-1]).trace(axis1=-1, axis2=-2)
-    uc = (psi[:,1:] * (div1 + div2)).mean()
+    uc = (psi[:,1:] * (div1 + div2))[1:-1].mean()
 
-    return phiavg, sc, uc, x, nu, (nu[:,1:]*fga[:,:-1]).sum(-1), nut#, LE
+    return phiavg, sc, uc, x, nu, (nu[:,1:]*fga[:,:-1]).sum(-1), nut, LE
