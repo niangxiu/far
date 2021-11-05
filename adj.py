@@ -46,26 +46,30 @@ def nias(Cinv, d, R, b):
     D, E = nanarray([2, nseg, nus, nus])
     y, lbd, a = nanarray([3, nseg, nus])
 
-    for i in range(1, nseg):
-        D[i] = Cinv[i] @ R[i]
-        E[i] = Cinv[i-1] + R[i].T @ D[i] 
-        y[i] = D[i].T @ d[i] - Cinv[i-1] @ d[i-1] - R[i].T @ b[i]
+    if nseg == 1:
+        a = np.array([Cinv[0] @ -d[0]])
+    
+    else:
+        for i in range(1, nseg):
+            D[i] = Cinv[i] @ R[i]
+            E[i] = Cinv[i-1] + R[i].T @ D[i] 
+            y[i] = D[i].T @ d[i] - Cinv[i-1] @ d[i-1] - R[i].T @ b[i]
 
-    # forward chasing. Use the new E!
-    for i in range(2, nseg):
-        W = np.linalg.solve(E[i-1].T, D[i-1].T).T 
-        E[i] -= W @ D[i-1].T
-        y[i] += W @ y[i-1]
+        # forward chasing. Use the new E!
+        for i in range(2, nseg):
+            W = np.linalg.solve(E[i-1].T, D[i-1].T).T 
+            E[i] -= W @ D[i-1].T
+            y[i] += W @ y[i-1]
 
-    # backward chasing
-    lbd[nseg-1] = np.linalg.solve(E[nseg-1], y[nseg-1]) 
-    for i in range(nseg-2, 0, -1):
-        lbd[i] = np.linalg.solve(E[i], (D[i].T @ lbd[i+1] + y[i]))
+        # backward chasing
+        lbd[nseg-1] = np.linalg.solve(E[nseg-1], y[nseg-1]) 
+        for i in range(nseg-2, 0, -1):
+            lbd[i] = np.linalg.solve(E[i], (D[i].T @ lbd[i+1] + y[i]))
 
-    # compute a from lbd
-    a[0] = Cinv[0] @ (-d[0] - lbd[1])
-    for i in range(1, nseg-1):
-        a[i] = Cinv[i] @ (-d[i] - lbd[i+1] + R[i]@lbd[i])
-    a[nseg-1] = Cinv[nseg-1] @ (-d[nseg-1] + R[nseg-1]@lbd[nseg-1])
+        # compute a from lbd
+        a[0] = Cinv[0] @ (-d[0] - lbd[1])
+        for i in range(1, nseg-1):
+            a[i] = Cinv[i] @ (-d[i] - lbd[i+1] + R[i]@lbd[i])
+        a[nseg-1] = Cinv[nseg-1] @ (-d[nseg-1] + R[nseg-1]@lbd[nseg-1])
 
     return a

@@ -13,13 +13,13 @@ from pdb import set_trace
 # cr = 0.2 # contracting rate of the first variable
 
 # default settings
-nstep = 20 # step per segment
-nus = 2 # u in paper, number of homogeneous tangent solutions
+nstep = 1 # step per segment
+nus = 1 # u in paper, number of homogeneous tangent solutions
 cr = 0.05 # contracting rate of the first variable
-nc = 3 # M in papaer, dimension of phase space
+nc = 2 # M in papaer, dimension of phase space
 
 nprm = 2 # number of parameters
-nseg = 10
+nseg = 2
 nseg_ps = 100
 nseg_dis = 100 # segments to discard, not even for Javg
 prm = np.array([0.1, 0.1]) # the epsilon on Patrick's paper

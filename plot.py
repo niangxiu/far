@@ -25,7 +25,7 @@ plt.rc('ytick', labelsize='xx-large')
 plt.rc('legend', fontsize='xx-large')
 plt.rc('font', family='sans-serif')
 
-np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
+# np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
 # default parameters 
