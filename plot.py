@@ -17,12 +17,15 @@ from ds import *
 import ds
 from far import far
 from fwd import primal_raw, preprocess
+from misc import *
 
 plt.rc('axes', labelsize='xx-large',  labelpad=12)
 plt.rc('xtick', labelsize='xx-large')
 plt.rc('ytick', labelsize='xx-large')
 plt.rc('legend', fontsize='xx-large')
 plt.rc('font', family='sans-serif')
+
+np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
 # default parameters 
@@ -35,29 +38,30 @@ def wrapped_far(prm, nseg, W, n_repeat):
     ds.nseg = nseg
     ds.W = W
     if n_repeat == 1 :
-        results = [far()]
+        results = [far(0)]
     else:
         with Pool(processes=ncpu) as pool:
-            results = pool.starmap(far)
+            results = pool.map(far, range(n_repeat))
     phiavg_, sc_, uc_, *_ = zip(*results)
     print('prm, nseg, W, phiavg, sc, uc, grad')
-    [print('{:.2e}, {:d}, {:d}, {:.2e}, {:.2e}, {:.2e}, {:.3e}'.\
-            format(ds.prm, ds.nseg, ds.W, phiavg, sc, uc, sc-uc)) \
+    [print('{}, {:d}, {:d}, {:.2e}, {}, {}, {}'\
+            .format(ds.prm, ds.nseg, ds.W, phiavg, sc, uc, sc-uc)) \
             for phiavg, sc, uc in zip(phiavg_, sc_, uc_)]
     return np.array(phiavg_), np.array(sc_), np.array(uc_)
 
 
 def change_T():
-    # convergence of gradient to different trajectory length
+    # convergence of gradient to different trajectory length, prm = prm[0] = prm[1]
     try:
         phiavgs, grads, nsegs = pickle.load( open("change_T.p", "rb"))
     except FileNotFoundError:
-        nsegs = np.array([5, 1e1, 2e1, 5e1, 1e2, 2e2], dtype=int) 
-        phiavgs, sc, uc = np.empty([3, nsegs.shape[0], n_repeat])
+        nsegs = np.array([5, 1e1, 2e1, 5e1, 1e2, 2e2, 5e2], dtype=int) 
+        phiavgs = nanarray([nsegs.shape[0], n_repeat])
+        sc, uc = nanarray([2, nsegs.shape[0], n_repeat, nprm])
         for i, nseg in enumerate(nsegs):
-            print('\nK=',nseg)
+            print('\nnseg=',nseg)
             phiavgs[i], sc[i], uc[i] = wrapped_far(prm, nseg, W, n_repeat)
-        grads = sc-uc
+        grads = sc.sum(-1)
         pickle.dump((phiavgs, grads, nsegs), open("change_T.p", "wb"))
     
     plt.semilogx(nsegs, grads, 'k.')
@@ -78,16 +82,18 @@ def change_T():
 
 
 def change_W():
-    # gradient to different W
+    # gradient to different W, prm = prm[0] = prm[1]
     try:
         phiavgs, sc, uc, grads, Ws = pickle.load( open("change_W.p", "rb"))
     except FileNotFoundError:
         Ws = np.arange(10)
-        phiavgs, sc, uc = np.empty([3, Ws.shape[0], n_repeat])
+        phiavgs = nanarray([Ws.shape[0], n_repeat])
+        sc, uc = nanarray([2, Ws.shape[0], n_repeat, nprm])
         for i, W in enumerate(Ws):
             print('\nW =',W)
             phiavgs[i], sc[i], uc[i] = wrapped_far(prm, nseg, W, n_repeat)
-        grads = sc-uc
+        set_trace()
+        grads = (sc-uc).sum(-1)
         pickle.dump((phiavgs, sc, uc, grads, Ws), open("change_W.p", "wb"))
     plt.plot(Ws, grads, 'k.')
     plt.plot([-1]*n_repeat, sc[0], 'k.')
@@ -104,11 +110,12 @@ def change_W_std():
         phiavgs, sc, uc, grads, Ws = pickle.load( open("change_W_std.p", "rb"))
     except FileNotFoundError:
         Ws = np.array([1e1, 2e1, 5e1, 1e2, 2e2, 5e2], dtype=int) 
-        phiavgs, sc, uc = np.empty([3, Ws.shape[0], n_repeat])
+        phiavgs = nanarray([Ws.shape[0], n_repeat])
+        sc, uc = nanarray([2, Ws.shape[0], n_repeat, nprm])
         for i, W in enumerate(Ws):
             print('\nW =',W)
             phiavgs[i], sc[i], uc[i] = wrapped_far(prm, nseg, W, n_repeat)
-        grads = sc-uc
+        grads = (sc-uc).sum(-1)
         pickle.dump((phiavgs, sc, uc, grads, Ws), open("change_W_std.p", "wb"))
 
     x = np.array([Ws[0], Ws[-1]])
@@ -122,18 +129,20 @@ def change_W_std():
 
 
 def change_prm():
-    # grad for different prm
-    n_repeat = 1 # must use 1, since prm in ds.py is fixed at the time the pool generates
-    prms = np.linspace(-0.3, 0.3, 11)
+    # grad for different prm = prm[0] = pr[1]
+    n_repeat = 1 # must use 1, since prm in ds.py is fixed when the pool intializes
     A = 0.015 # step size in the plot
-    phiavgs, sc, uc = np.empty([3,prms.shape[0]])
+    NN = 11 # number of steps in parameters
+    prms = np.tile(np.linspace(-0.3, 0.3, NN), (nprm,1)).T
+    phiavgs = nanarray(11)
+    sc = nanarray(prms.shape)
+    uc = nanarray(prms.shape)
     try:
         prms, phiavgs, grads = pickle.load(open("change_prm.p", "rb"))
     except FileNotFoundError:
         for i, prm in enumerate(prms):
-            ds.prm = prm
             phiavgs[i], sc[i], uc[i] = wrapped_far(prm, nseg, W, n_repeat)
-        grads = sc - uc
+        grads = (sc - uc).sum(-1) # since prm[0] = prm[1]
         pickle.dump((prms, phiavgs, grads), open("change_prm.p", "wb"))
     plt.plot(prms, phiavgs, 'k.', markersize=6)
     for prm, phiavg, grad in zip(prms, phiavgs, grads):

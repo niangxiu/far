@@ -9,7 +9,7 @@ import fwd, adj
 from misc import nanarray
 
 
-def far():
+def far(pid):
     Cinv = nanarray([nseg, nus, nus])
     R = nanarray([nseg+1, nus, nus]) # R[k] at k \Delta T
     depsnup, depsnupt = nanarray([2, nseg, nus])
@@ -54,9 +54,11 @@ def far():
 
     # finally, get X related quantities and compute the adjoint response
     fga, fgax = fwd.fgafgax_(x)
-    sc = (nu[:,1:] * fga[:,:-1]).sum(-1)[1:-1].mean() # shadowing contribution
-    div1 = (nut[:,1:] * fga[:,:-1]).sum(-1) # unstable divergence part 1
-    div2 = (eps[:,1:].transpose(0,1,3,2) @ fgax[:,:-1] @ e[:,:-1]).trace(axis1=-1, axis2=-2)
-    uc = (psi[:,1:] * (div1 + div2))[1:-1].mean()
-
-    return phiavg, sc, uc, x, nu, (nu[:,1:]*fga[:,:-1]).sum(-1), nut, LE
+    sc_ = (nu[newaxis,:,1:] * fga[:,:,:-1]).sum(-1)
+    # sc = sc_[:,1:-1].mean((1,2)) # shadowing contribution
+    sc = sc_[:,:].mean((1,2)) # shadowing contribution
+    div1 = (nut[newaxis,:,1:] * fga[:,:,:-1]).sum(-1) # unstable divergence part 1
+    div2 = (eps[newaxis,:,1:].transpose(0,1,2,4,3) @ fgax[:,:,:-1] @ e[newaxis,:,:-1]).trace(axis1=-1, axis2=-2)
+    # uc = (psi[newaxis,:,1:] * (div1 + div2))[:,1:-1].mean((1,2))
+    uc = (psi[newaxis,:,1:] * (div1 + div2))[:,:].mean((1,2))
+    return phiavg, sc, uc, x, nu, (nu[newaxis,:,1:] * fga[:,:,:-1]).sum(-1), nut, LE

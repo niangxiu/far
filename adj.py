@@ -69,13 +69,3 @@ def nias(Cinv, d, R, b):
     a[nseg-1] = Cinv[nseg-1] @ (-d[nseg-1] + R[nseg-1]@lbd[nseg-1])
 
     return a
-
-
-# def tan2nd(rini, u, psi, w, vt):
-    # r = rini
-    # for i in range(nstep):
-        # fu, _ = fufs(u[i])
-        # fuu, fsu = fuufsu(u[i])
-        # rn = fu @ r + psi[i+1] * fsu @ w[i] + fuu @ vt[i] @ w[i]
-        # r = rn
-    # return r
