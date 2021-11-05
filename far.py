@@ -5,11 +5,12 @@ import itertools
 from pdb import set_trace
 from scipy.linalg import block_diag
 from ds import *
+import ds
 import fwd, adj
 from misc import nanarray
 
 
-def far(pid):
+def far(nseg, W):
     Cinv = nanarray([nseg, nus, nus])
     R = nanarray([nseg+1, nus, nus]) # R[k] at k \Delta T
     depsnup, depsnupt = nanarray([2, nseg, nus])
@@ -21,12 +22,12 @@ def far(pid):
 
     # preprocess
     x0 = fwd.preprocess()
-    x0 = [0.1,0.1]
+    # x0 = [0.1,0.1]
     x, psi, phiavg = fwd.primal(x0, nseg, W) # notice that x0 is changed
 
     # tangent
-    # e[0,0] = fwd.Q0()
-    e[0,0] = np.array([[0],[1]])
+    e[0,0] = fwd.Q0()
+    # e[0,0] = np.array([[0],[1]])
     R[0] = np.eye(nus)
     for k in range(nseg):
         fwd.tan(x[k], e[k])
@@ -51,6 +52,7 @@ def far(pid):
     # adjoint shadowing
     aa = adj.nias(Cinv, depsnup, R, b)
     aat = adj.nias(Cinv, depsnupt, R, bt)
+    # set_trace()
     nu = nup + (eps*aa[:,newaxis,newaxis,:]).sum(-1) 
     nut = nupt + (eps*aat[:,newaxis,newaxis,:]).sum(-1) 
 
@@ -63,6 +65,5 @@ def far(pid):
     div2 = (eps[newaxis,:,1:].transpose(0,1,2,4,3) @ fgax[:,:,:-1] @ e[newaxis,:,:-1]).trace(axis1=-1, axis2=-2)
     # uc = (psi[newaxis,:,1:] * (div1 + div2))[:,1:-1].mean((1,2))
     uc = (psi[newaxis,:,1:] * (div1 + div2))[:,:].mean((1,2))
-
-    set_trace()
+    
     return phiavg, sc, uc, x, nu, (nu[newaxis,:,1:] * fga[:,:,:-1]).sum(-1), nut, LE

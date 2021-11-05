@@ -5,6 +5,7 @@ import itertools
 from pdb import set_trace
 from scipy.linalg import block_diag
 from ds import *
+import ds
 from misc import *
 
 
@@ -43,6 +44,7 @@ def renorm(eps0, nup0, nupt0, eN):
 
 def nias(Cinv, d, R, b):
     # solve the nonintrusive adjoint shadowing problem
+    nseg = Cinv.shape[0]
     D, E = nanarray([2, nseg, nus, nus])
     y, lbd, a = nanarray([3, nseg, nus])
 
@@ -57,9 +59,9 @@ def nias(Cinv, d, R, b):
 
         # forward chasing. Use the new E!
         for i in range(2, nseg):
-            W = np.linalg.solve(E[i-1].T, D[i-1].T).T 
-            E[i] -= W @ D[i-1].T
-            y[i] += W @ y[i-1]
+            M = np.linalg.solve(E[i-1].T, D[i-1].T).T 
+            E[i] -= M @ D[i-1].T
+            y[i] += M @ y[i-1]
 
         # backward chasing
         lbd[nseg-1] = np.linalg.solve(E[nseg-1], y[nseg-1]) 

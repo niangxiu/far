@@ -28,24 +28,25 @@ plt.rc('font', family='sans-serif')
 # np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
-# default parameters 
+# default parameters that changes frequently
+nseg = 10
+W = 10
 n_repeat = 4
 ncpu = 2
 
 
 def wrapped_far(prm, nseg, W, n_repeat): 
     ds.prm = prm
-    ds.nseg = nseg
-    ds.W = W
+    arguments = [(nseg, W,) for i in range(n_repeat)]
     if n_repeat == 1 :
-        results = [far(0)]
+        results = [far(*arguments[0])]
     else:
         with Pool(processes=ncpu) as pool:
-            results = pool.map(far, range(n_repeat))
+            results = pool.starmap(far, arguments)
     phiavg_, sc_, uc_, *_ = zip(*results)
     print('prm, nseg, W, phiavg, sc, uc, grad')
     [print('{}, {:d}, {:d}, {:.2e}, {}, {}, {}'\
-            .format(ds.prm, ds.nseg, ds.W, phiavg, sc, uc, sc-uc)) \
+            .format(ds.prm, nseg, W, phiavg, sc, uc, sc-uc)) \
             for phiavg, sc, uc in zip(phiavg_, sc_, uc_)]
     return np.array(phiavg_), np.array(sc_), np.array(uc_)
 
@@ -62,6 +63,7 @@ def change_T():
             print('\nnseg=',nseg)
             phiavgs[i], sc[i], uc[i] = wrapped_far(prm, nseg, W, n_repeat)
         grads = sc.sum(-1)
+        grads = (sc-uc).sum(-1)
         pickle.dump((phiavgs, grads, nsegs), open("change_T.p", "wb"))
     
     plt.semilogx(nsegs, grads, 'k.')
@@ -203,10 +205,10 @@ def trajectory():
 
 if __name__ == '__main__': # pragma: no cover
     starttime = time.time()
-    change_prm()
+    # change_prm()
     # change_W()
     # change_W_std()
-    # change_T()
+    change_T()
     # trajectory()
     # all_info()
     print('prm=', ds.prm)
