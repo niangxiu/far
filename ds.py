@@ -15,8 +15,8 @@ from pdb import set_trace
 # default settings
 cr = 0.05 # contracting rate of the first variable
 nstep = 20 # step per segment
-nus = 20 # u in paper, number of homogeneous tangent solutions
-nc = 21 # M in papaer, dimension of phase space
+nus = 2 # u in paper, number of homogeneous tangent solutions
+nc = 3 # M in papaer, dimension of phase space
 
 nprm = 2 # number of parameters
 nseg_ps = 10
@@ -24,20 +24,21 @@ nseg_dis = 10 # segments to discard, not even for Javg
 prm = np.array([0.1, 0.1]) # the epsilon on Patrick's paper
 A = 5
 ii = list(range(1,nc))
+ucweight = 0.02
 
 
 def fphi(x):
     f = np.zeros(nc)
     f[0] = cr*x[0] + 0.1*cos(A*x[ii]).sum() + prm[0]
     f[ii] = (2*x[ii] + prm[1]*(1+x[0]) * sin(2*x[ii])) % (2*np.pi)
-    phi = x[0]**3 + 0.005 * ((x[ii] - np.pi)**2).sum()
+    phi = x[0]**3 + ucweight * ((x[ii] - np.pi)**2).sum()
     return f, phi
 
 
 def phix(x):
     phix = np.zeros(x.shape)
     phix[0] = 3 * x[0]**2
-    phix[ii] = 0.005 * 2 * (x[ii] - np.pi)
+    phix[ii] = ucweight * 2 * (x[ii] - np.pi)
     return phix
 
 

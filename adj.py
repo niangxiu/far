@@ -49,6 +49,7 @@ def nias(Cinv, d, R, b):
     y, lbd, a = nanarray([3, nseg, nus])
 
     if nseg == 1:
+        # this case is conviniet as a debugging reference
         a = np.array([Cinv[0] @ -d[0]])
     
     else:
