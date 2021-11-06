@@ -89,7 +89,7 @@ def trajectory():
 def all_info():
     # generate all info prm = prm[0] = pr[1]
     starttime = time.time()
-    phiavg, sc, uc, x, nu, fganu, nut, LE = far(1000, W)
+    phiavg, sc, uc, x, nu, sc_, nut, LE = far(1000, W)
     endtime = time.time()
     print('time for far:', endtime-starttime)
     for i, j in [[1,0], [1,2]]:
@@ -107,9 +107,9 @@ def all_info():
     hax = np.arange(nun.shape[0])
     ax1.plot(hax,nun)
     ax1.set_title('nu norm')
-    fganu = fganu.sum(0).reshape(-1)
-    ax2.plot(np.arange(fganu.shape[0]),fganu)
-    ax2.set_title('fganu')
+    sc_ = sc_.sum(0).reshape(-1)
+    ax2.plot(np.arange(sc_.shape[0]),sc_)
+    ax2.set_title('sc at each step')
     ax3.scatter(x[:,:,0], nu[:,:,0])
     ax3.set_title('x[0] vs nu[0]')
     nutn = np.linalg.norm(nut, axis=-1).reshape(-1)
@@ -126,7 +126,7 @@ def change_prm():
     A = 0.015 # step size in the plot
     NN = 11 # number of steps in parameters
     prms = np.tile(np.linspace(-0.3, 0.3, NN), (nprm,1)).T
-    phiavgs = nanarray(11)
+    phiavgs = nanarray(NN)
     sc = nanarray(prms.shape)
     uc = nanarray(prms.shape)
     try:
@@ -280,10 +280,10 @@ if __name__ == '__main__': # pragma: no cover
     # trajectory()
     # all_info()
     # change_T()
-    # change_prm()
+    change_prm()
     # change_W()
     # change_W_std()
-    contours()
+    # contours()
     print('prm=', ds.prm)
     endtime = time.time()
     print('time elapsed in seconds:', endtime-starttime)

@@ -54,10 +54,14 @@ def far(nseg, W):
     nut = nupt + (eps*aat[:,newaxis,newaxis,:]).sum(-1) 
 
     # finally, get X related quantities and compute the adjoint response
-    fga, fgax = fwd.fgafgax_(x)
-    sc = (nu[newaxis,:,1:] * fga[:,:,:-1]).sum(-1).mean((1,2)) # shadowing contribution
-    div1 = (nut[newaxis,:,1:] * fga[:,:,:-1]).sum(-1) # unstable divergence part 1
-    div2 = (eps[newaxis,:,1:].transpose(0,1,2,4,3) @ fgax[:,:,:-1] @ e[newaxis,:,:-1]).trace(axis1=-1, axis2=-2)
-    uc = (psi[newaxis,:,1:] * (div1 + div2)).mean((1,2))
+    sc_, uc_ = nanarray([2, nprm, nseg, nstep])
+    for k in range(nseg):
+        fga, fgax = fwd.fgafgax_(x[k,:-1])
+        sc_[:,k] = (nu[k][newaxis,1:] * fga).sum(-1) # shadowing contribution
+        div1 = (nut[k][newaxis,1:] * fga).sum(-1) # unstable divergence part 1
+        div2 = (eps[k][newaxis,1:].transpose(0,1,3,2) @ fgax @ e[k][newaxis,:-1]).trace(axis1=-1, axis2=-2)
+        uc_[:,k] = (psi[k][newaxis,1:] * (div1 + div2))
+    sc = sc_.mean((-1,-2))
+    uc = uc_.mean((-1,-2))
     
-    return phiavg, sc, uc, x, nu, (nu[newaxis,:,1:] * fga[:,:,:-1]).sum(-1), nut, LE
+    return phiavg, sc, uc, x, nu, sc_, nut, LE

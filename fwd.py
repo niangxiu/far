@@ -71,9 +71,10 @@ def getLE(R):
 
 
 def fgafgax_(x):
-    fga = nanarray([nprm, x.shape[0], x.shape[1], nc])
-    fgax = nanarray([nprm, x.shape[0], x.shape[1], nc, nc])
-    for al in range(x.shape[0]):
-        for n in range(nstep+1):
-            fga[:,al, n], fgax[:,al, n] = fgafgax(x[al,n])
+    # compute for 1d array
+    N = x.shape[0]
+    fga = nanarray([nprm, N, nc])
+    fgax = nanarray([nprm, N, nc, nc])
+    for n in range(N):
+        fga[:,n], fgax[:,n] = fgafgax(x[n])
     return fga, fgax

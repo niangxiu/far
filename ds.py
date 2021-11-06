@@ -24,7 +24,7 @@ nseg_dis = 10 # segments to discard, not even for Javg
 prm = np.array([0.1, 0.1]) # the epsilon on Patrick's paper
 A = 5
 ii = list(range(1,nc))
-ucweight = 0.02
+ucweight = 0.005
 
 
 def fphi(x):
