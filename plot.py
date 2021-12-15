@@ -89,7 +89,7 @@ def trajectory():
 def all_info():
     # generate all info prm = prm[0] = pr[1]
     starttime = time.time()
-    phiavg, sc, uc, x, nu, sc_, nut, LE = far(1000, W)
+    phiavg, sc, uc, x, nu, sc_, nut, LE = far(200, W)
     endtime = time.time()
     print('time for far:', endtime-starttime)
     for i, j in [[1,0], [1,2]]:
@@ -192,7 +192,7 @@ def change_W():
         grads = (sc-uc).sum(-1)
         pickle.dump((phiavgs, sc, uc, grads, Ws), open("change_W.p", "wb"))
     plt.plot(Ws, grads, 'k.')
-    plt.plot([-1]*n_repeat, sc[0], 'k.')
+    plt.plot([-1]*n_repeat, sc[0].sum(-1), 'k.') # W=-1: plot only sc, no uc
     plt.ylabel('$\delta\\rho(\Phi)/\delta \gamma$')
     plt.xlabel('$W$')
     plt.tight_layout()
@@ -280,8 +280,8 @@ if __name__ == '__main__': # pragma: no cover
     # trajectory()
     # all_info()
     # change_T()
-    change_prm()
-    # change_W()
+    # change_prm()
+    change_W()
     # change_W_std()
     # contours()
     print('prm=', ds.prm)
