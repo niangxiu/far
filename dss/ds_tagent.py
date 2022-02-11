@@ -1,4 +1,4 @@
-# expressions of the dynamical system: modified solonoid map with M=11 and u=10
+# expressions of the dynamical system: modified solonoid map, this only has one paramter
 from __future__ import division
 import numpy as np
 from numpy import newaxis, sin, cos
