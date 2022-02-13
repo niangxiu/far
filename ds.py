@@ -1,7 +1,7 @@
 # expressions of the dynamical system: the neural network from B. Cessac and J.A. Sepulchre, I changed the time-dependent perturbation and objective function to a location-dependent one. Soon FAR will handle time-dependent perturbations.
 from __future__ import division
 import numpy as np
-from numpy import newaxis, sin, cos, sinh, cosh, tanh
+from numpy import newaxis, sinh, cosh, tanh
 import shutil
 import sys
 import itertools
@@ -14,10 +14,10 @@ nus = 1 # u in paper, number of homogeneous tangent solutions
 nc = 9 # M in papaer, dimension of phase space
 
 nprm = 3 # number of parameters
-nseg_ps = 10
-nseg_dis = 10 # segments to discard, not even for Javg
-prm = np.array([0.1, 0.1]) 
-g = 3 
+nseg_ps = 100
+nseg_dis = 100 # segments to discard, not even for Javg
+A = 1 # first parameter
+g = 3 # second parameter
 
 
 J = np.array([
@@ -30,11 +30,12 @@ J = np.array([
     [ 0.   ,  0.   , -0.852, -0.342,  0.389,  0.   ,  0.   , -0.041, 0.   ],
     [ 0.   ,  0.416,  0.   ,  0.   , -0.084,  0.   ,  0.287,  0.208, 0.   ],
     [ 0.   ,  0.   ,  0.   , -0.649,  0.   ,  0.   ,  0.331,  0.14 , -1.023]])
+# J[8,8] is the third parameter
 
 
 def fphi(x):
-    f = J @ tanh(x)
-    phi = x**2.sum()
+    f = A * J @ tanh(g*x)
+    phi = (x**2).sum()
     return f, phi
 
 
@@ -45,8 +46,7 @@ def phix(x):
 
 def fx(x):
     # the first axis labels components of f
-    _ = g / (cosh(g * x) ** 2)
-    fx = J * _
+    fx = A * J * g / (cosh(g * x) ** 2)
     return fx
 
 
@@ -55,28 +55,26 @@ def fxx(x):
     fxx = np.zeros([nc,nc,nc])
     for i in range(nc):
         for j in range(nc):
-            fxx[i,j,j] = J[i,j] * g**2 * -2 * sinh(g*x[j]) / cosh(g*x[j])**3
+            fxx[i,j,j] = A * J[i,j] * g**2 * -2 * sinh(g*x[j]) / cosh(g*x[j])**3
     return fxx
 
 
 def fgafgax(x):
     # quantities related to X. Note fga_n = X_{n+1}
-    # the first axis labels components of f
+    # the first axis with length nc labels components of f
     fga = np.zeros([nprm,nc])
     fgax = np.zeros([nprm,nc,nc])
 
-    f = f(x)
-    fx = fx(x)
-    fga[0] = sin(f)
-    fga[1] = J @ (x / cosh(g*x)**2)
-    fga[2] = tanh ( g*x[8] ) 
+    fga[0] = J @ tanh(g * x)
+    fga[1] = A * J @ (x / cosh(g*x)**2)
+    fga[2] = A * tanh ( g*x[8] ) 
     
     for i in range(nc):
+        fgax[0] = J * g / (cosh(g * x) ** 2)
         for j in range(nc):
-            fgax[0,i,j] = cos(f[i]) * fx[i,j]
-            fgax[1,i,j] = J[i,j] / cosh(g*x[j])**2 \\
-                    + J[i,j] * x[j] * -2 * g * sinh(g*x[j]) / cosh(g*x[j]) ** 3
+            fgax[1,i,j] = A * J[i,j] / cosh(g*x[j])**2 \
+                    + A * J[i,j] * x[j] * -2 * g * sinh(g*x[j]) / cosh(g*x[j])**3
 
-    fgax[2,8,8] = g / cosh(g*x[8]) ** 2
+    fgax[2,8,8] = A * g / cosh(g*x[8])**2
 
     return fga, fgax

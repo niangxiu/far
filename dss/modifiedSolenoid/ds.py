@@ -64,7 +64,7 @@ def fxx(x):
 
 def fgafgax(x):
     # quantities related to X. Note fga_n = X_{n+1}
-    # the first axis labels components of f
+    # the first axis of length nc labels components of f
     fga = np.zeros([nprm,nc])
     fga[0,0] = 1
     fga[1,ii] = (1+x[0]) * sin(2*x[ii])
