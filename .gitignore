@@ -4,4 +4,10 @@
 /__pycache__/*
 /misc/*
 /remote/*
-
+*.ion
+/dss/notgood/*
+/dss/*/misc.py
+/dss/*/far.py
+/dss/*/fwd.py
+/dss/*/adj.py
+/dss/*/makefile

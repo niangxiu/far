@@ -29,8 +29,8 @@ np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
 # default parameters that changes frequently
-nseg = 200
-W = 10
+nseg = 1000
+W = 15
 n_repeat = 4
 ncpu = 2
 
@@ -79,9 +79,7 @@ def trajectory():
     print('time for compute trajectory:', endtime-starttime)
     x = x[1000:]
     fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    ax.plot3D(x[:,0], x[:,1], x[:,2], '.', markersize=1)
-    ax.view_init(70, 135)
+    plt.plot(x[:,0], x[:,1], '.', markersize=1)
     plt.savefig('3dview.png')
     plt.close()
 
@@ -123,27 +121,26 @@ def all_info():
 def change_prm():
     # grad for different prm = prm[0] = pr[1]
     n_repeat = 1 # must use 1, since prm in ds.py is fixed when the pool intializes
-    A = 0.005 # step size in the plot
+    A = 0.015 # step size in the plot
     NN = 11 # number of steps in parameters
-    prms = np.tile(np.linspace(-0.1, 0.1, NN), (nprm,1)).T
+    prms = np.tile(np.linspace(-0.3, 0.3, NN), (nprm,1)).T
     phiavgs = nanarray(NN)
     sc = nanarray(prms.shape)
     uc = nanarray(prms.shape)
     try:
-        prms, phiavgs, grads = pickle.load(open("change_prm.p", "rb"))
+        prms, phiavgs, grads = pickle.load(open("change_prm_{}.p".format(ds.T), "rb"))
     except FileNotFoundError:
         for i, prm in enumerate(prms):
-            _, sc[i], uc[i] = wrapped_far(prm, 1000, W, n_repeat)
-            phiavgs[i] = wrapped_primal(prm, 10000, n_repeat)
+            phiavgs[i], sc[i], uc[i] = wrapped_far(prm, nseg, W, n_repeat)
         grads = (sc - uc).sum(-1) # since prm[0] = prm[1]
-        pickle.dump((prms, phiavgs, grads), open("change_prm.p", "wb"))
+        pickle.dump((prms, phiavgs, grads), open("change_prm_{}.p".format(ds.T), "wb"))
     plt.plot(prms, phiavgs, 'k.', markersize=6)
     for prm, phiavg, grad in zip(prms, phiavgs, grads):
         plt.plot([prm-A, prm+A], [phiavg-grad*A, phiavg+grad*A], color='grey', linestyle='-')
     plt.ylabel('$\\rho(\Phi)$')
     plt.xlabel('$\gamma$')
     plt.tight_layout()
-    plt.savefig('prm_obj.png')
+    plt.savefig('prm_obj_{}.png'.format(ds.T))
     plt.close()
 
 

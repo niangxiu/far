@@ -29,7 +29,7 @@ np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
 # default parameters that changes frequently
-nseg = 100
+nseg = 200
 W = 10
 n_repeat = 4
 ncpu = 2
@@ -39,14 +39,8 @@ def pr(nTstep):
     return primal_raw(preprocess(), nTstep)
 
 
-def setprm(prm):
-    ds.A = prm[0]
-    ds.g = prm[1]
-    ds.J[8,8] = prm[2]
-
-
 def wrapped_primal(prm, nseg, n_repeat): 
-    setprm(prm)
+    ds.prm = prm
     nTstep = nseg * ds.nstep
     arguments = [(nTstep,) for i in range(n_repeat)]
     if n_repeat == 1:
@@ -62,7 +56,7 @@ def wrapped_primal(prm, nseg, n_repeat):
 
 
 def wrapped_far(prm, nseg, W, n_repeat): 
-    setprm(prm)
+    ds.prm = prm
     arguments = [(nseg, W,) for i in range(n_repeat)]
     if n_repeat == 1:
         results = [far(*arguments[0])]
@@ -70,9 +64,9 @@ def wrapped_far(prm, nseg, W, n_repeat):
         with Pool(processes=ncpu) as pool:
             results = pool.starmap(far, arguments)
     phiavg_, sc_, uc_, *_ = zip(*results)
-    print('A, g, J88, nseg, W, phiavg, sc, uc, grad')
-    [print('{}, {}, {}, {:d}, {:d}, {:.2e}, {}, {}, {}'\
-            .format(ds.A, ds.g, ds.J[8,8], nseg, W, phiavg, sc, uc, sc-uc)) \
+    print('prm, nseg, W, phiavg, sc, uc, grad')
+    [print('{}, {:d}, {:d}, {:.2e}, {}, {}, {}'\
+            .format(ds.prm, nseg, W, phiavg, sc, uc, sc-uc)) \
             for phiavg, sc, uc in zip(phiavg_, sc_, uc_)]
     return np.array(phiavg_), np.array(sc_), np.array(uc_)
 
@@ -98,7 +92,7 @@ def all_info():
     phiavg, sc, uc, x, nu, sc_, nut, LE = far(200, W)
     endtime = time.time()
     print('time for far:', endtime-starttime)
-    for i, j in [[0,1], [2,1]]:
+    for i, j in [[1,0], [1,2]]:
         plt.figure(figsize=[6,6])
         plt.plot(x[:,:,i].reshape(-1), x[:,:,j].reshape(-1), '.', markersize=1)
         plt.xlabel('$x^{}$'.format(i+1))
@@ -124,48 +118,33 @@ def all_info():
     plt.tight_layout()
     plt.savefig('all info.png')
     plt.close()
-    # set_trace()
 
 
 def change_prm():
     # grad for different prm = prm[0] = pr[1]
     n_repeat = 1 # must use 1, since prm in ds.py is fixed when the pool intializes
-    As = [0.015, 0.06, 0.015] # step size in the plot
+    A = 0.005 # step size in the plot
     NN = 11 # number of steps in parameters
-    name_prm = ['A', 'g', 'J88']
-    prms_ = nanarray((NN, nprm))
-    prms_[:,0] = np.linspace(0.5, 1.5, NN)
-    prms_[:,1] = np.linspace(1.5, 4.5, NN)
-    prms_[:,2] = np.linspace(-1.2, -0.8, NN)
-    for iprm in range(3):
-        print("\n\n change {}".format(name_prm[iprm]))
-        prms = nanarray((NN, nprm))
-        prms[:,0] = 1
-        prms[:,1] = 3
-        prms[:,2] = -1.023
-        prms[:,iprm] = prms_[:,iprm]
-        phiavgs = nanarray(NN)
-        sc = nanarray(prms.shape)
-        uc = nanarray(prms.shape)
-        try:
-            prms, phiavgs, grads = pickle.load(open("change_{}.p".format(name_prm[iprm]), "rb"))
-        except FileNotFoundError:
-            for i, prm in enumerate(prms):
-                phiavgs[i], sc[i], uc[i] = wrapped_far(prm, nseg, W, n_repeat)
-            grads = sc - uc
-            pickle.dump((prms, phiavgs, grads), open("change_{}.p".format(name_prm[iprm]), "wb"))
-
-        prms = prms[:,iprm]
-        grads = grads[:,iprm]
-        A = As[iprm]
-        plt.plot(prms, phiavgs, 'k.', markersize=6)
-        for prm, phiavg, grad in zip(prms, phiavgs, grads):
-            plt.plot([prm-A, prm+A], [phiavg-grad*A, phiavg+grad*A], color='grey', linestyle='-')
-        plt.ylabel('$\\rho(\Phi)$')
-        plt.xlabel('{}'.format(name_prm[iprm]))
-        plt.tight_layout()
-        plt.savefig('obj_{}.png'.format(name_prm[iprm]))
-        plt.close()
+    prms = np.tile(np.linspace(-0.1, 0.1, NN), (nprm,1)).T
+    phiavgs = nanarray(NN)
+    sc = nanarray(prms.shape)
+    uc = nanarray(prms.shape)
+    try:
+        prms, phiavgs, grads = pickle.load(open("change_prm.p", "rb"))
+    except FileNotFoundError:
+        for i, prm in enumerate(prms):
+            _, sc[i], uc[i] = wrapped_far(prm, 1000, W, n_repeat)
+            phiavgs[i] = wrapped_primal(prm, 10000, n_repeat)
+        grads = (sc - uc).sum(-1) # since prm[0] = prm[1]
+        pickle.dump((prms, phiavgs, grads), open("change_prm.p", "wb"))
+    plt.plot(prms, phiavgs, 'k.', markersize=6)
+    for prm, phiavg, grad in zip(prms, phiavgs, grads):
+        plt.plot([prm-A, prm+A], [phiavg-grad*A, phiavg+grad*A], color='grey', linestyle='-')
+    plt.ylabel('$\\rho(\Phi)$')
+    plt.xlabel('$\gamma$')
+    plt.tight_layout()
+    plt.savefig('prm_obj.png')
+    plt.close()
 
 
 def change_T():
@@ -300,12 +279,12 @@ def contours():
 if __name__ == '__main__': # pragma: no cover
     starttime = time.time()
     # trajectory()
-    all_info()
+    # all_info()
     # change_T()
-    # change_prm()
+    change_prm()
     # change_W()
     # change_W_std()
     # contours()
-    # print('prm=', ds.prm)
+    print('prm=', ds.prm)
     endtime = time.time()
     print('time elapsed in seconds:', endtime-starttime)
