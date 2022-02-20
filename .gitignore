@@ -1,6 +1,8 @@
 *.png
 *.pyc
 *.p
+ds.py
+plot.py
 /__pycache__/*
 /misc/*
 /remote/*

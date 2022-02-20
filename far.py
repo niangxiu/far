@@ -11,7 +11,7 @@ from misc import nanarray
 
 
 def far(nseg, W):
-    Cinv = nanarray([nseg, nus, nus])
+    C = nanarray([nseg, nus, nus])
     R = nanarray([nseg+1, nus, nus]) # R[k] at k \Delta T
     depsnup, depsnupt = nanarray([2, nseg, nus])
     b, bt = nanarray([2, nseg+1, nus])
@@ -38,8 +38,8 @@ def far(nseg, W):
     for k in range(nseg-1,-1,-1):
         eps[k,-1], nup[k,-1], nupt[k,-1], b[k+1], bt[k+1] \
                 = adj.renorm(eps[k+1,0], nup[k+1,0], nupt[k+1,0], e[k,-1])
-        Cinv[k], depsnup[k], depsnupt[k] \
-                = adj.products(x[k], e[k], eps[k], nup[k], nupt[k])
+        adj.adj(x[k], e[k], eps[k], nup[k], nupt[k])
+    _, _, _, b[0], bt[0] = adj.renorm(eps[0,0], nup[0,0], nupt[0,0], e[0,0])
 
     # cut the nans in e, eps, nup, nupt
     e = e[:-1]
@@ -48,8 +48,8 @@ def far(nseg, W):
     nupt = nupt[:-1]
 
     # adjoint shadowing
-    aa = adj.nias(Cinv, depsnup, R, b)
-    aat = adj.nias(Cinv, depsnupt, R, bt)
+    aa = adj.nias(R, b)
+    aat = adj.nias(R, bt)
     nu = nup + (eps*aa[:,newaxis,newaxis,:]).sum(-1) 
     nut = nupt + (eps*aat[:,newaxis,newaxis,:]).sum(-1) 
 
