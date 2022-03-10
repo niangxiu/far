@@ -15,8 +15,8 @@ from pdb import set_trace
 # default settings
 cr = 0.05 # contracting rate of the first variable
 nstep = 20 # step per segment
-nus = 2 # u in paper, number of homogeneous tangent solutions
-nc = 3 # M in papaer, dimension of phase space
+nus = 20 # u in paper, number of homogeneous tangent solutions
+nc = 21 # M in papaer, dimension of phase space
 
 nprm = 2 # number of parameters
 nseg_ps = 10

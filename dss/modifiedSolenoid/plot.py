@@ -29,7 +29,7 @@ np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
 # default parameters that changes frequently
-nseg = 100
+nseg = 200
 W = 10
 n_repeat = 4
 ncpu = 2
@@ -89,7 +89,7 @@ def trajectory():
 def all_info():
     # generate all info prm = prm[0] = pr[1]
     starttime = time.time()
-    phiavg, sc, uc, x, nu, sc_, nut, LE = far(200, W)
+    phiavg, sc, uc, x, nu, sc_, nut, LE = far(10000, W)
     endtime = time.time()
     print('time for far:', endtime-starttime)
     for i, j in [[1,0], [1,2]]:
@@ -278,10 +278,10 @@ def contours():
 if __name__ == '__main__': # pragma: no cover
     starttime = time.time()
     # trajectory()
-    # all_info()
+    all_info()
     # change_T()
     # change_prm()
-    change_W()
+    # change_W()
     # change_W_std()
     # contours()
     print('prm=', ds.prm)

@@ -21,9 +21,9 @@ nprm = 2 # number of parameters
 nseg_ps = 10
 nseg_dis = 10 # segments to discard, not even for Javg
 prm = np.array([0., 0.]) # the epsilon on Patrick's paper
-T = 6
+T = 8
 A = 2 * pi * T
-B = 0
+B = 3
 
 
 def fphi(x):
