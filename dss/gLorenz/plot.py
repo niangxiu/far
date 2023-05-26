@@ -29,8 +29,8 @@ np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
 
 # default parameters that changes frequently
-nseg = 200
-W = 10
+nseg = 1000
+W = 15
 n_repeat = 4
 ncpu = 2
 
@@ -71,37 +71,66 @@ def wrapped_far(prm, nseg, W, n_repeat):
     return np.array(phiavg_), np.array(sc_), np.array(uc_)
 
 
+def graph():
+    x = np.linspace(-1,1,2001)
+    fphi = np.vectorize(ds.fphi)
+    fig = plt.figure(figsize=(7,6))
+
+    f, _ = fphi(x)
+    plt.plot(x, f, 'k-', markersize=0.5)
+    # ds.prm[1] = 1
+    # ds.A = 2 * np.pi * 1
+    # f, _ = fphi(x)
+    # plt.plot(x, f, '--', markersize=0.5, label="$\gamma$=1, T=1")
+    # ds.prm[1] = 8
+    # ds.A = 2 * np.pi * 8
+    # f, _ = fphi(x)
+    # plt.plot(x, f, '-.', markersize=0.5, label="$\gamma$=8, T=8")
+
+    # plt.xlim(-0.1, 1.1)
+    # plt.ylim(-0.05, 1.15)
+    plt.xlabel('$x$')
+    plt.ylabel('$f(x)$')
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.tight_layout()
+    plt.savefig('graph.png')
+    plt.close()
+
+
 def trajectory():
+    ds.prm[1] = 0
     np.random.seed()
     starttime = time.time()
-    x, phi = primal_raw(preprocess(), 20*1000)
+    x, phi = primal_raw(preprocess(), 200*10000)
     endtime = time.time()
     print('time for compute trajectory:', endtime-starttime)
     x = x[1000:]
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    ax.plot3D(x[:,0], x[:,1], x[:,2], '.', markersize=1)
-    ax.view_init(70, 135)
-    plt.savefig('3dview.png')
+    plt.figure(figsize=[7,6])
+    # plt.plot(x.reshape(-1), np.random.rand(x.reshape(-1).shape[-1]), '.', markersize=0.3)
+    plt.hist(x,40,density=True,histtype='step')
+    plt.xlabel('$x$')
+    plt.ylabel('$\\sigma (x)$')
+    plt.tight_layout()
+    plt.savefig('x_frequent.png')
     plt.close()
 
 
 def all_info():
     # generate all info prm = prm[0] = pr[1]
     starttime = time.time()
-    phiavg, sc, uc, x, nu, sc_, nut, LE = far(200, W)
+    phiavg, sc, uc, x, nu, sc_, nut, LE = far(100000, W)
     endtime = time.time()
     print('time for far:', endtime-starttime)
-    for i, j in [[1,0], [1,2]]:
-        plt.figure(figsize=[6,6])
-        plt.plot(x[:,:,i].reshape(-1), x[:,:,j].reshape(-1), '.', markersize=1)
-        plt.xlabel('$x^{}$'.format(i+1))
-        plt.ylabel('$x^{}$'.format(j+1))
-        plt.tight_layout()
-        plt.savefig('x{}_x{}.png'.format(i+1, j+1))
-        plt.close()
     print('phiavg, sc, uc, grad = ', '{}, {}, {}, {}'.format(phiavg, sc, uc, sc-uc))
     print('Lyapunov exponenets = ', LE)
+    fig = plt.figure(figsize=(7,6))
+    plt.scatter(x[:,:,0], nut[:,:,0], s=2)
+    # plt.scatter(x[:,:,0], nut[:,:,0], markersize=0.5)
+    plt.xlabel('$x$')
+    plt.ylabel('$\\tilde\\nu $')
+    plt.tight_layout()
+    plt.savefig('tnu.png')
+    plt.close()
     _, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(13,12))
     nun = np.linalg.norm(nu, axis=-1).reshape(-1)
     hax = np.arange(nun.shape[0])
@@ -112,9 +141,11 @@ def all_info():
     ax2.set_title('sc at each step')
     ax3.scatter(x[:,:,0], nu[:,:,0])
     ax3.set_title('x[0] vs nu[0]')
-    nutn = np.linalg.norm(nut, axis=-1).reshape(-1)
-    ax4.plot(hax,nutn)
-    ax4.set_title('nutilde norm')
+    ax4.scatter(x[:,:,0], nut[:,:,0])
+    ax4.set_title('x[0] vs nut[0]')
+    # nutn = np.linalg.norm(nut, axis=-1).reshape(-1)
+    # ax4.plot(hax,nutn)
+    # ax4.set_title('nutilde norm')
     plt.tight_layout()
     plt.savefig('all info.png')
     plt.close()
@@ -123,28 +154,29 @@ def all_info():
 def change_prm():
     # grad for different prm = prm[0] = pr[1]
     n_repeat = 1 # must use 1, since prm in ds.py is fixed when the pool intializes
-    A = 0.005 # step size in the plot
-    NN = 11 # number of steps in parameters
-    prms = np.tile(np.linspace(-0.1, 0.1, NN), (nprm,1)).T
+    A = 0.015 # step size in the plot
+    NN = 12 # number of steps in parameters
+    prms = np.tile(np.linspace(-0.3, 0.0, NN), (nprm,1)).T
     phiavgs = nanarray(NN)
     sc = nanarray(prms.shape)
     uc = nanarray(prms.shape)
     try:
-        prms, phiavgs, grads = pickle.load(open("change_prm_U{}.p".format(ds.U), "rb"))
+        prms, phiavgs, grads = pickle.load(open("change_prm.p", "rb"))
     except FileNotFoundError:
         for i, prm in enumerate(prms):
-            _, sc[i], uc[i] = wrapped_far(prm, 1000, W, n_repeat)
-            phiavgs[i] = wrapped_primal(prm, 10000, n_repeat)
+            phiavgs[i], sc[i], uc[i] = wrapped_far(prm, 10000, W, n_repeat)
+            # phiavgs[i] = wrapped_primal(prm, 10000, n_repeat)
         grads = (sc - uc).sum(-1) # since prm[0] = prm[1]
-        pickle.dump((prms, phiavgs, grads), open("change_prm_U{}.p".format(ds.U), "wb"))
-    plt.figure(figsize=[6,6])
+        pickle.dump((prms, phiavgs, grads), open("change_prm.p", "wb"))
+    plt.figure(figsize=[7,6])
     plt.plot(prms, phiavgs, 'k.', markersize=6)
     for prm, phiavg, grad in zip(prms, phiavgs, grads):
         plt.plot([prm-A, prm+A], [phiavg-grad*A, phiavg+grad*A], color='grey', linestyle='-')
     plt.ylabel('$\\rho(\Phi)$')
     plt.xlabel('$\gamma$')
+    # plt.ylim(0.455,0.53)
     plt.tight_layout()
-    plt.savefig('prm_obj_U{}.png'.format(ds.U))
+    plt.savefig("change_prm.png")
     plt.close()
 
 
@@ -279,10 +311,11 @@ def contours():
 
 if __name__ == '__main__': # pragma: no cover
     starttime = time.time()
+    # graph()
     # trajectory()
-    # all_info()
+    all_info()
     # change_T()
-    change_prm()
+    # change_prm()
     # change_W()
     # change_W_std()
     # contours()

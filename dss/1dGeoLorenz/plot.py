@@ -164,8 +164,8 @@ def change_prm():
         prms, phiavgs, sc, uc = pickle.load(open("change_prm.p", "rb"))
     except FileNotFoundError:
         for i, prm in enumerate(prms):
-            _, sc[i], uc[i] = wrapped_far(prm, 1000, W, n_repeat)
-            phiavgs[i] = wrapped_primal(prm, 10000, n_repeat)
+            phiavgs[i], sc[i], uc[i] = wrapped_far(prm, 10000, W, n_repeat)
+            # phiavgs[i] = wrapped_primal(prm, 50000, n_repeat)
         pickle.dump((prms, phiavgs, sc, uc), open("change_prm.p", "wb"))
 
     grads = (sc - uc)[:,1]
@@ -316,9 +316,9 @@ if __name__ == '__main__': # pragma: no cover
     starttime = time.time()
     # graph()
     # trajectory()
-    all_info()
+    # all_info()
     # change_T()
-    # change_prm()
+    change_prm()
     # change_W()
     # change_W_std()
     # contours()

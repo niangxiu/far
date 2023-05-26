@@ -25,10 +25,11 @@ prm = np.array([0.1, 0.1]) # the epsilon on Patrick's paper
 A = 5
 ii = list(range(1,nc))
 ucweight = 1
+U = 10
 
 
 def fphi(x):
-    rn = 10 * (np.random.rand(nc) - 0.5)
+    rn = U * (np.random.rand(nc) - 0.5)
     f = np.zeros(nc)
     f[0] = cr*x[0] + 0.1*cos(A*x[ii]).sum() + prm[0] + rn[0]
     f[ii] = (2*x[ii] + prm[1]*(1+x[0]) * sin(2*x[ii]) + rn[1:]) % (2*np.pi)
